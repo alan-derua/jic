@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Sandbox libs2" type="JetRunConfigurationType" focusToolWindowBeforeRun="true">
+    <option name="MAIN_CLASS_NAME" value="com.github.alanderua.jic.cli.JicKt" />
+    <module name="jic.cli.main" />
+    <option name="PROGRAM_PARAMETERS" value="-cp &quot;libs2/*&quot; -d out src" />
+    <shortenClasspath name="NONE" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/sandbox" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

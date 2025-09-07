@@ -4,4 +4,8 @@ class Foo {
     void foo() {
         System.out.println(Bar.bar());
     }
+
+    void foo2() {
+        System.out.println("foo2");
+    }
 }

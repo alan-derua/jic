@@ -1,17 +1,21 @@
 package com.github.alanderua.jic.impl.compiler
 
-import com.github.alanderua.jic.api.CompilationResult
 import com.github.alanderua.jic.api.JicLogger
 import com.github.alanderua.jic.impl.toDiagnosticsListener
 import com.github.alanderua.jic.impl.toWriter
+import com.sun.source.util.JavacTask
+import com.sun.source.util.TaskEvent
+import com.sun.source.util.TaskListener
 import java.io.ByteArrayOutputStream
 import java.nio.file.Path
+import java.nio.file.Paths
+import javax.lang.model.util.Elements
 import javax.tools.JavaCompiler
 import javax.tools.StandardLocation
 import javax.tools.ToolProvider
 import kotlin.io.path.createDirectories
 
-internal class ProvidedPlatformCompiler(
+internal class ToolchainCompiler(
     logger: JicLogger
 ) : Compiler {
 
@@ -39,10 +43,10 @@ internal class ProvidedPlatformCompiler(
         }
 
     override fun compile(
-        sources: List<Path>,
-        classpath: List<Path>,
+        sources: Collection<Path>,
+        classpath: Collection<Path>,
         out: Path,
-    ): CompilationResult = fileManager.use { fileManager ->
+    ): CompilerResult = fileManager.use { fileManager ->
         out.createDirectories()
 
         val untis = fileManager.getJavaFileObjectsFromPaths(sources)
@@ -52,6 +56,8 @@ internal class ProvidedPlatformCompiler(
 
         val options = listOfNotNull(
             "-implicit:none",
+            "--release", "8",
+            "-Xlint:-options"
 //            "-verbose"
         )
 
@@ -62,14 +68,43 @@ internal class ProvidedPlatformCompiler(
             options,
             null,
             untis
-        )
+        ) as JavacTask
 
-        val result = task.call()
+        val collector = SourceToClassesCollector(task.elements)
 
-        return if (result) {
-            CompilationResult.Success
+        task.addTaskListener(collector)
+
+        return if (task.call()) {
+            CompilerResult.Success(
+                classesBySources = collector.getCollectedClasses()
+            )
         } else {
-            CompilationResult.Error
+            CompilerResult.Error
         }
+    }
+}
+
+private class SourceToClassesCollector(
+    private val elements: Elements
+) : TaskListener {
+
+    private val classesBySource = mutableMapOf<Path, MutableSet<String>>()
+
+    fun getCollectedClasses(): Map<Path, Set<String>> {
+        return classesBySource
+    }
+
+    override fun finished(e: TaskEvent?) {
+        if (e?.kind != TaskEvent.Kind.GENERATE) return
+
+        val src = e.sourceFile ?: return
+        val type = e.typeElement ?: return
+
+        val srcPath = Paths.get(src.toUri())
+
+        val binaryName = elements.getBinaryName(type).toString()
+
+        classesBySource.getOrPut(srcPath) { mutableSetOf() }
+            .add(binaryName)
     }
 }

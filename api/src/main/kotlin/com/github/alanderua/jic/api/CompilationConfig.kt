@@ -8,4 +8,7 @@ public interface CompilationConfig {
 
     public fun useOut(out: Path)
     public val out: Path
+
+    public fun useCacheDir(cacheDir: Path)
+    public val cacheDir: Path
 }

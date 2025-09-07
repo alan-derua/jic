@@ -2,9 +2,26 @@ package com.github.alanderua.jic.impl
 
 import com.github.alanderua.jic.api.JicLogger
 import java.io.Writer
+import java.nio.file.Path
 import javax.tools.Diagnostic
 import javax.tools.DiagnosticListener
 import javax.tools.JavaFileObject
+import kotlin.io.path.Path
+import kotlin.io.path.relativeToOrSelf
+
+internal fun JicLogger.logdPrettyPaths(
+    name: String,
+    paths: Iterable<Path>,
+    relativeTo: Path = Path("")
+) {
+    val pathsStr = paths.joinToString(
+        prefix = "$name:\n",
+        separator = "\n"
+    ) {
+        "    ${it.relativeToOrSelf(relativeTo)}"
+    }
+    d(pathsStr)
+}
 
 internal fun JicLogger.toWriter() = object : Writer() {
     val sb = StringBuilder()

@@ -17,4 +17,10 @@ internal class CompilationConfigImpl : CompilationConfig {
     }
 
     override var out: Path = workingDir
+
+    override fun useCacheDir(cacheDir: Path) {
+        this.cacheDir = cacheDir
+    }
+
+    override var cacheDir: Path = workingDir.resolve("cache")
 }

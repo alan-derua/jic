@@ -66,4 +66,6 @@ where possible options include:
         Specify where to find user class files
     -d <directory>
         Specify where to place generated class files
+    -force-recompile
+        Do not use incremental compilation and compile all files
 """.trimIndent()

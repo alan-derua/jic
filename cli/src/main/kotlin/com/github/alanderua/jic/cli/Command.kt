@@ -4,7 +4,8 @@ internal sealed class Command {
     data class Compile(
         val src: String,
         val outDir: String?,
-        val cp: String?
+        val cp: String?,
+        val forceRecompile: Boolean
     ): Command()
 
     data class Print(val msg: String) : Command()
@@ -18,6 +19,7 @@ internal fun parseCommandLineArgs(args: Array<out String>): Command {
     var cp: String? = null
     var outDir: String? = null
     var src: String? = null
+    var forceRecompile: Boolean = false
 
     args.iterator().apply {
         while (hasNext()) {
@@ -34,6 +36,7 @@ internal fun parseCommandLineArgs(args: Array<out String>): Command {
                     outDir = next().takeUnless { it.startsWith("-") }
                         ?: error("No value provided for '$arg'")
                 }
+                "-force-recompile" -> forceRecompile = true
                 "-version" -> return Command.PrintVersion
                 else -> src = arg
             }
@@ -47,7 +50,8 @@ internal fun parseCommandLineArgs(args: Array<out String>): Command {
     return Command.Compile(
         src = src,
         outDir = outDir,
-        cp = cp
+        cp = cp,
+        forceRecompile = forceRecompile
     )
 }
 

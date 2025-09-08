@@ -3,6 +3,9 @@ package com.github.alanderua.jic.api
 import java.nio.file.Path
 
 public interface CompilationConfig {
+    public fun forceRecompile()
+    public val forceRecompile: Boolean
+
     public fun useWorkingDir(workingDir: Path)
     public val workingDir: Path
 

@@ -53,7 +53,8 @@ internal class CompilationServiceImpl : CompilationService {
 
         val mode = compilationSpecProvider.computeCompilationSpec(
             sources = normalizedSources,
-            classpath = classpath
+            classpath = classpath,
+            forceRecompile = config.forceRecompile
         )
 
         val result = when(mode) {
@@ -128,7 +129,7 @@ internal class CompilationServiceImpl : CompilationService {
         compilationCacheManager: CompilationCacheManager
     ): CompilerResult {
         val cacheOutDir = config.cacheDir.resolve("out")
-        val incrementalClasspath = classpath + config.out
+        val incrementalClasspath = listOf(config.out) + classpath
 
         FileUtils.cleanOutDir(cacheOutDir)
 

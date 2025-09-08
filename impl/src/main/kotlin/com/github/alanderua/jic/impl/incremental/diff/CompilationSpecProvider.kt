@@ -21,7 +21,14 @@ internal class CompilationSpecProvider private constructor(
     fun computeCompilationSpec(
         sources: List<Path>,
         classpath: List<Path>,
+        forceRecompile: Boolean
     ): CompilationSpec {
+        if (forceRecompile) {
+            return CompilationSpec.FullRecompilation(
+                "Forced recompile requested"
+            )
+        }
+
         val previousCompilationData = compilationCacheManager.previousCompilationData
             ?: return CompilationSpec.FullRecompilation("Compilation cache is not available")
 

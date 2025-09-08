@@ -6,6 +6,12 @@ import kotlin.io.path.Path
 
 internal class CompilationConfigImpl : CompilationConfig {
 
+    override fun forceRecompile() {
+        forceRecompile = true
+    }
+
+    override var forceRecompile: Boolean = false
+
     override fun useWorkingDir(workingDir: Path) {
         this.workingDir = workingDir
     }

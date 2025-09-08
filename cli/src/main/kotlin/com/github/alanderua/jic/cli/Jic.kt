@@ -50,6 +50,9 @@ class Jic(
                 logger.d("Compiling sources for $command")
 
                 val config = compilationService.makeCompilationConfig().apply {
+                    if (command.forceRecompile) {
+                        forceRecompile()
+                    }
                     useWorkingDir(workingDir)
                     useOut(outDir)
                 }

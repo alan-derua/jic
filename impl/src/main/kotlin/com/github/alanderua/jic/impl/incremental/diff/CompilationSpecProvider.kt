@@ -6,6 +6,7 @@ import com.github.alanderua.jic.impl.files.fingerprint
 import com.github.alanderua.jic.impl.files.hash
 import com.github.alanderua.jic.impl.incremental.cache.CompilationCacheManager
 import com.github.alanderua.jic.impl.incremental.cache.PreviousCompilationData
+import com.github.alanderua.jic.impl.incremental.classpath.ClassSetAnalyzer
 import com.github.alanderua.jic.impl.logdPrettyPaths
 import java.nio.file.Path
 import java.util.Stack
@@ -39,17 +40,11 @@ internal class CompilationSpecProvider private constructor(
         }
 
         val fileChanges = previousCompilationData.computeFilesChange(sources)
-        val classpathChanges = previousCompilationData.classpathChanged(classpath)
+        val classpathChanges = previousCompilationData.classpathChanges(classpath)
 
-        if (fileChanges.isEmpty() && !classpathChanges) {
+        if (fileChanges.isEmpty() && classpathChanges.isEmpty()) {
             return CompilationSpec.CompilationNotNeeded(
                 "No classpath and no source file changes"
-            )
-        }
-
-        if (classpathChanges) {
-            return CompilationSpec.FullRecompilation(
-                "Classpath has changed"
             )
         }
 
@@ -63,17 +58,19 @@ internal class CompilationSpecProvider private constructor(
                 ?.generatedClasses ?: emptyList()
         }
 
-        val changedClassesLogStr = changedClasses.joinToString(
-            prefix = "Need to be recompiled because of source changes:\n",
-            separator = "\n"
-        ) { "    $it" }
-        logger.d(changedClassesLogStr)
+        if (changedClasses.isNotEmpty()) {
+            val changedClassesLogStr = changedClasses.joinToString(
+                prefix = "Need to be recompiled because of source changes:\n",
+                separator = "\n"
+            ) { "    $it" }
+            logger.d(changedClassesLogStr)
+        }
 
         val dirtySet = hashSetOf<String>()
         dirtySet += changedClasses
 
         val processDeps = Stack<String>().apply {
-            addAll(classesToDelete + changedClasses)
+            addAll(classesToDelete + changedClasses + classpathChanges)
         }
 
         val reasons = mutableMapOf<String, MutableSet<String>>()
@@ -132,10 +129,28 @@ internal class CompilationSpecProvider private constructor(
         return sources.map { Path(it) }.toSet()
     }
 
-    private fun PreviousCompilationData.classpathChanged(classpath: List<Path>): Boolean {
-        // TODO: actual ABI diff computation
+    private fun PreviousCompilationData.classpathChanges(classpath: List<Path>): Set<String> {
+        val prev = classpathAnalysis
+        val curr = ClassSetAnalyzer.analyzeClasspathSet(classpath)
 
-        return classpath != this.classpath.map { Path(it) }
+        val changedClasses = buildSet {
+            // changed or deleted classes
+            for ((clazz, hash) in prev.classHashes) {
+                if (curr.classHashes[clazz] != hash) {
+                    add(clazz)
+                }
+            }
+        }
+
+        if (changedClasses.isNotEmpty()) {
+            val changedClassesLogStr = changedClasses.joinToString(
+                prefix = "Changed or deleted classpath files:\n",
+                separator = "\n"
+            ) { "    $it" }
+            logger.d(changedClassesLogStr)
+        }
+
+        return changedClasses
     }
 
     private fun PreviousCompilationData.computeFilesChange(sources: List<Path>): FileChanges {
@@ -176,7 +191,14 @@ internal class CompilationSpecProvider private constructor(
             val classes = meta.generatedClasses
             for (clazz in classes) {
                 val classFile = FileUtils.getClassPath(outDir, clazz)
-                if (!classFile.exists()) return false
+                if (!classFile.exists()) {
+                    logger.e("'$classFile' couldn't be found in the previous output")
+                    return false
+                }
+                if (classFile.hash != outputDirAnalysis.classHashes[clazz]) {
+                    logger.e("'$classFile' was modified")
+                    return false
+                }
             }
         }
         return true

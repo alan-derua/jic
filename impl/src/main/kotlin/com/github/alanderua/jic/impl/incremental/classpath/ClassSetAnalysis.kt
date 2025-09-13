@@ -4,13 +4,14 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 internal data class ClassSetAnalysis(
+    val classHashes: Map<String, Long>,
     val dependents: Map<String, Set<String>>
 )
 
 internal fun ClassSetAnalysis.merge(
     newAnalysis: ClassSetAnalysis,
-    compiledClasses: Set<String>,
-    deletedClasses: Set<String>
+    compiledClasses: Set<String> = emptySet(),
+    deletedClasses: Set<String> = emptySet()
 ): ClassSetAnalysis {
 
     val mergedDependents = buildMap {
@@ -20,7 +21,10 @@ internal fun ClassSetAnalysis.merge(
         }
     }
 
+    val mergedHashes = classHashes + newAnalysis.classHashes
+
     return ClassSetAnalysis(
+        classHashes = mergedHashes,
         dependents = mergedDependents
     )
 }

@@ -51,15 +51,15 @@ internal class CompilationServiceImpl : CompilationService {
             logger = logger
         )
 
-        val mode = compilationSpecProvider.computeCompilationSpec(
+        val spec = compilationSpecProvider.computeCompilationSpec(
             sources = normalizedSources,
             classpath = classpath,
             forceRecompile = config.forceRecompile
         )
 
-        val result = when(mode) {
+        val result = when(spec) {
             is CompilationSpec.FullRecompilation -> {
-                logger.i("Performing a clean build, because: ${mode.reason}")
+                logger.i("Performing a clean build, because: ${spec.reason}")
 
                 compileFull(
                     sources = normalizedSources,
@@ -72,16 +72,16 @@ internal class CompilationServiceImpl : CompilationService {
                 logger.i("Performing an incremental build")
 
                 compileIncremental(
-                    sources = mode.sourcesToRecompile,
+                    sources = spec.sourcesToRecompile,
                     classpath = classpath,
-                    classesToDelete = mode.classesToDelete,
-                    deletedFiles = mode.deletedFiles,
+                    classesToDelete = spec.classesToDelete,
+                    deletedFiles = spec.deletedFiles,
                     config = config,
                     compilationCacheManager = cacheManager
                 )
             }
             is CompilationSpec.CompilationNotNeeded -> {
-                logger.i("Compilation not needed: ${mode.reason}")
+                logger.i("Compilation not needed: ${spec.reason}")
                 CompilerResult.CompilationNotNeeded
             }
         }

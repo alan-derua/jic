@@ -7,8 +7,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 internal data class PreviousCompilationData(
     val metaDataBySource: Map<String, SourceFileMeta>,
-    val classpath: List<String>,
-    val outputDirAnalysis: ClassSetAnalysis
+    val outputDirAnalysis: ClassSetAnalysis,
+    val classpathAnalysis: ClassSetAnalysis
 )
 
 @Serializable
@@ -29,11 +29,11 @@ internal fun PreviousCompilationData.merge(
 
     return PreviousCompilationData(
         metaDataBySource = mergedMetaMap,
-        classpath = newData.classpath,
         outputDirAnalysis = outputDirAnalysis.merge(
             newAnalysis = newData.outputDirAnalysis,
             compiledClasses = compiledClasses,
             deletedClasses = deletedClasses
-        )
+        ),
+        classpathAnalysis = newData.classpathAnalysis
     )
 }

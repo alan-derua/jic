@@ -4,7 +4,6 @@ import com.github.alanderua.jic.impl.files.fingerprint
 import com.github.alanderua.jic.impl.files.hash
 import com.github.alanderua.jic.impl.incremental.classpath.ClassSetAnalyzer
 import java.nio.file.Path
-import kotlin.collections.iterator
 import kotlin.io.path.relativeToOrSelf
 
 internal object CompilationAnalyzer {
@@ -28,16 +27,13 @@ internal object CompilationAnalyzer {
             }
         }
 
-        val generatedClasses = classesBySources.flatMap { it.value }.toSet()
+        val outputDirAnalysis = ClassSetAnalyzer.analyzeOutputDir(outputDir = outDir)
 
-        val outputDirAnalysis = ClassSetAnalyzer.analyzeOutputDir(
-            outputDir = outDir,
-            classes = generatedClasses
-        )
+        val classpathAnalysis = ClassSetAnalyzer.analyzeClasspathSet(classpath)
 
         return PreviousCompilationData(
             outputDirAnalysis = outputDirAnalysis,
-            classpath = classpath.map { it.toString() },
+            classpathAnalysis = classpathAnalysis,
             metaDataBySource = metaBySource
         )
     }

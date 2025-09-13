@@ -5,8 +5,11 @@ This tools does basic incremental compilation of Java sources based on type refe
 The tool analyzes produced `.class` files after compilation by finding all used types in a `.class`
 and builds a reverse dependency map `class -> dependents`.
 
-The tools keeps track of Java files and classes produces by each file. When a Java file is changed,
+The tool keeps track of Java files and classes produces by each file. When a Java file is changed,
 all class files produced by that file and their dependents are marked for recompilation.
+
+The tool analyzes provided classpath before and after compilation and marks dependent source classes
+for recompilation if the classpath has changed.
 
 ## Known limitations
 
@@ -15,7 +18,6 @@ Known limitations, which are not handled (implemented)(yet):
 - Inline constant changes are not detected
 - `package-info.java` and `module-info.java` are not checked
 - Annotation processors are not checked
-- Provided classpath is not analyzed
 - Compilation target SDK is Java 8
 - Passing down properties to the compiler is not implemented
 
@@ -67,9 +69,11 @@ Implementation structure:
 
 - Detect inline constant changes
 - Split dependents map into accessible and private ones to limit the dirty set
-- Analyze provided classpath by creating an ABI signature (publicly available classes, their fields and method)
-and trigger source set recompilation only if ABI has changed
+- More fine-grained classpath analysis with an ABI signature (publicly available classes, their fields and method)
+- Cache classpath snapshots
 - Create a proper test suite
+- Support compiler params
+- Support annotation processing
 - Support all Java 8+ targets
 - Become a daemon to keep caches in memory and save time by not loading compilator classes on every tool start 
 - Add measurements to every step to analyze performance problems

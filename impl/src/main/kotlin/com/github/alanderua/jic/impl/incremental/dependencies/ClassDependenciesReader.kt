@@ -8,12 +8,11 @@ import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.commons.Remapper
-import java.io.InputStream
 
 internal object ClassDependenciesReader {
 
-    fun readDependencies(inputStream: InputStream): ClassDependencies {
-        val reader = ClassReader(inputStream)
+    fun readDependencies(classContent: ByteArray): ClassDependencies {
+        val reader = ClassReader(classContent)
 
         return ClassDependencies(
             className = reader.className.toDotName(),

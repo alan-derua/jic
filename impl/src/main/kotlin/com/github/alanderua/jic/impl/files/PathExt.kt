@@ -1,13 +1,16 @@
 package com.github.alanderua.jic.impl.files
 
-import java.nio.ByteBuffer
-import java.nio.channels.FileChannel
+import java.io.InputStream
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.zip.CRC32C
+import java.util.zip.ZipFile
 import kotlin.io.path.exists
+import kotlin.io.path.extension
+import kotlin.io.path.inputStream
+import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readAttributes
+import kotlin.io.path.walk
 
 internal val Path.fingerprint: Long
     get() {
@@ -35,16 +38,46 @@ internal val Path.hash: Long
             "'$this' doesn't exist"
         }
 
-        val crc = CRC32C()
-        FileChannel.open(this).use { ch ->
-            val buf = ByteBuffer.allocateDirect(1 shl 20)
-            while (true) {
-                val n = ch.read(buf)
-                if (n < 0) break
-                buf.flip()
-                crc.update(buf)
-                buf.clear()
-            }
+        return inputStream().use {
+            it.crc32c()
         }
-        return crc.value
     }
+
+internal fun Path.visitClasses(action: (inputStream: InputStream) -> Unit) {
+    when {
+        isRegularFile() && extension == "jar" -> visitJarClasses(action)
+        isDirectory() -> visitDirClasses(action)
+        else -> error("Unknown file type: '$this'")
+    }
+}
+
+internal fun Path.visitJarClasses(action: (inputStream: InputStream) -> Unit) {
+    require(isRegularFile() && extension == "jar") {
+        "'$this' is not a jar file!"
+    }
+
+    ZipFile(this.toFile()).use { jar ->
+        jar.entries()
+            .asSequence()
+            .filter { !it.isDirectory && it.name.endsWith(".class") }
+            .forEach { classEntry ->
+                jar.getInputStream(classEntry).use {
+                    action(it)
+                }
+            }
+    }
+}
+
+internal fun Path.visitDirClasses(action: (inputStream: InputStream) -> Unit) {
+    require(isDirectory()) {
+        "'$this' is not a directory!"
+    }
+
+    val classes = walk().filter { it.extension == "class" }
+
+    for (clazz in classes) {
+        clazz.inputStream().use {
+            action(it)
+        }
+    }
+}

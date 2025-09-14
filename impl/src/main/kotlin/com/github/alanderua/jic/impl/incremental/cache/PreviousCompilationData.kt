@@ -3,6 +3,8 @@ package com.github.alanderua.jic.impl.incremental.cache
 import com.github.alanderua.jic.impl.incremental.classpath.ClassSetAnalysis
 import com.github.alanderua.jic.impl.incremental.classpath.merge
 import kotlinx.serialization.Serializable
+import java.nio.file.Path
+import kotlin.io.path.Path
 
 @Serializable
 internal data class PreviousCompilationData(
@@ -36,4 +38,33 @@ internal fun PreviousCompilationData.merge(
         ),
         classpathAnalysis = newData.classpathAnalysis
     )
+}
+
+internal fun PreviousCompilationData.getClassesForSource(
+    source: Path
+): Result<Collection<String>> = runCatching {
+    metaDataBySource[source.toString()]
+        ?.generatedClasses ?: error("Couldn't find any classes for the source: $source")
+}
+
+internal fun PreviousCompilationData.findSourcesForClasses(
+    classes: Collection<String>
+): Result<Set<Path>> = runCatching {
+    val sourceByClass = buildMap {
+        for ((source, meta) in metaDataBySource) {
+            for (clazz in meta.generatedClasses) {
+                put(clazz, source)
+            }
+        }
+    }
+
+    val sources = buildSet {
+        for (clazz in classes) {
+            val source = sourceByClass[clazz]
+                ?: error("Couldn't find source file for '$clazz'")
+            add(Path(source))
+        }
+    }
+
+    sources
 }

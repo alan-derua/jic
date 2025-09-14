@@ -4,6 +4,7 @@ import com.github.alanderua.jic.api.JicLogger
 import com.github.alanderua.jic.impl.incremental.cache.CompilationCacheManager
 import com.github.alanderua.jic.impl.incremental.cache.findSourcesForClasses
 import com.github.alanderua.jic.impl.incremental.cache.getClassesForSource
+import com.github.alanderua.jic.impl.incremental.classpath.ClassSetAnalyzer
 import com.github.alanderua.jic.impl.logdPrettyPaths
 import java.nio.file.Path
 
@@ -36,7 +37,9 @@ internal class CompilationSpecProvider private constructor(
             }
 
         val fileChanges = previousCompilationData.computeFilesChange(sources)
-        val classpathChanges = previousCompilationData.classpathChanges(classpath)
+
+        val classpathAnalysis = ClassSetAnalyzer.analyzeClasspathSet(classpath)
+        val classpathChanges = previousCompilationData.classpathChanges(classpathAnalysis)
 
         logFileChanges(fileChanges)
         logClasspathChanges(classpathChanges)

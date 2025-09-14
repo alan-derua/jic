@@ -1,18 +1,19 @@
 package com.github.alanderua.jic.impl.incremental.diff
 
 import com.github.alanderua.jic.impl.incremental.cache.PreviousCompilationData
-import com.github.alanderua.jic.impl.incremental.classpath.ClassSetAnalyzer
-import java.nio.file.Path
+import com.github.alanderua.jic.impl.incremental.classpath.ClassSetAnalysis
 import java.util.Stack
 
-internal fun PreviousCompilationData.classpathChanges(classpath: List<Path>): Set<String> {
-    val prev = classpathAnalysis
-    val curr = ClassSetAnalyzer.analyzeClasspathSet(classpath)
+internal fun PreviousCompilationData.classpathChanges(
+    analysis: ClassSetAnalysis
+): Set<String> {
+    val prevHashes = classpathAnalysis.classHashes
+    val currHashes = analysis.classHashes
 
     val changedClasses = buildSet {
         // changed or deleted classes
-        for ((clazz, hash) in prev.classHashes) {
-            if (curr.classHashes[clazz] != hash) {
+        for ((clazz, hash) in prevHashes) {
+            if (currHashes[clazz] != hash) {
                 add(clazz)
             }
         }
